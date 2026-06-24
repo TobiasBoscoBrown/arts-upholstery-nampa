@@ -51,11 +51,14 @@
   /* ---------- ANIMATED COUNTERS ---------- */
   function animateCount(el){
     var target = parseFloat(el.getAttribute('data-count')); var dec = (el.getAttribute('data-dec')==='1');
-    if(reduce){ el.textContent = dec ? target.toFixed(1) : Math.round(target); return; }
-    var start = null, dur = 1200;
-    function step(ts){ if(!start) start = ts; var p = Math.min((ts-start)/dur,1); var v = target*(0.5-Math.cos(Math.PI*p)/2);
-      el.textContent = dec ? v.toFixed(1) : Math.round(v); if(p<1) requestAnimationFrame(step); }
+    var fin = function(){ el.textContent = dec ? target.toFixed(1) : Math.round(target); };
+    if(reduce || document.hidden){ fin(); return; }
+    var start = null, dur = 1200, done = false;
+    function step(ts){ if(done) return; if(!start) start = ts; var p = Math.min((ts-start)/dur,1); var v = target*(0.5-Math.cos(Math.PI*p)/2);
+      el.textContent = dec ? v.toFixed(1) : Math.round(v); if(p<1) requestAnimationFrame(step); else done=true; }
     requestAnimationFrame(step);
+    // safety net: guarantee the final value even if rAF is throttled/stalled
+    setTimeout(function(){ if(!done){ done=true; fin(); } }, dur + 400);
   }
   var io = ('IntersectionObserver' in window) ? new IntersectionObserver(function(es){
     es.forEach(function(e){ if(e.isIntersecting){ animateCount(e.target); io.unobserve(e.target); } });
